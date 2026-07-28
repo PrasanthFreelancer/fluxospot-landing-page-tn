@@ -4,6 +4,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const apiKey = process.env.OPENAI_API_KEY;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -15,8 +16,8 @@ const transporter = nodemailer.createTransport({
     port: 465,
     secure: true, // TLS/SSL for port 465
     auth: {
-        user: 'resend',
-        pass: 're_XdUB5bME_JgMQVUgPU8LpikmiUt3kjp1V' // Your Resend API key
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS, // Your Resend API key
     }
 });
 
