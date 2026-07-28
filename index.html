@@ -253,7 +253,7 @@
                                 <div class="flex items-center justify-between gap-2">
                                     <div>
                                         <span class="bg-yellow-400 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">100% FREE</span>
-                                        <h3 class="text-lg sm:text-xl font-black text-white mt-1">இலவச ஆலோசனை (Free Consultation)</h3>
+                                        <h3 class="text-lg sm:text-xl font-black text-white mt-1">இலவச ஆலோசனை (Free Demo)</h3>
                                         <p class="text-slate-300 text-xs mt-0.5">Fill details below. We call you within 2 hrs!</p>
                                     </div>
                                     <div class="hidden sm:block shrink-0">
@@ -286,14 +286,7 @@
                             </div>
 
                             <!-- Lead Form -->
-                            <form id="lead-form" action="https://formsubmit.co/fluxospot@gmail.com" method="POST" class="space-y-4">
-                                
-                                <!-- FormSubmit Hidden Settings -->
-                                <input type="hidden" name="_next" id="form-next-url" value="">
-                                <input type="hidden" name="_captcha" value="false">
-                                <input type="hidden" name="_subject" value="New Website Lead - Fluxospot Software Services">
-                                <input type="hidden" name="_template" value="table">
-
+                            <form id="lead-form" class="space-y-4">
                                 <div>
                                     <label for="user-name" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                                         Your Name / உங்கள் பெயர் <span class="text-rose-500">*</span>
@@ -330,7 +323,9 @@
                                             <option value="" disabled selected>Select Plan / திட்டம்</option>
                                             <option value="Starter Plan (₹7,999)">Starter Plan - One Pager (₹7,999)</option>
                                             <option value="Growth Plan (₹14,999)">Growth Plan - Professional Website (₹14,999)</option>
-                                            <option value="E-Commerce Plan (₹24,999)">E-Commerce &amp; Custom Portal (₹24,999)</option>                                        </select>
+                                            <option value="E-Commerce Plan (₹24,999)">E-Commerce &amp; Custom Portal (₹24,999)</option>
+                                            <option value="Other / Free Consultation">General Consultation / Doubt</option>
+                                        </select>
                                     </div>
                                 </div>
 
@@ -891,24 +886,70 @@
             });
         });
 
-        // Lead Form Submission Listener
+        // Lead Form Submission Listener (Custom Server Endpoint via Fetch)
         const leadForm = document.getElementById('lead-form');
         const submitBtn = document.getElementById('submit-btn');
         const btnText = document.getElementById('btn-text');
         const btnIcon = document.getElementById('btn-icon');
 
         if (leadForm) {
-            leadForm.addEventListener('submit', function(e) {
-                // Trigger Meta Pixel Lead Event immediately on submit button click
+            leadForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                // Trigger Meta Pixel Lead Event
                 if (typeof fbq === 'function') {
                     fbq('track', 'Lead');
                 }
+
+                // Hide existing alerts
+                document.getElementById('form-success-alert')?.classList.add('hidden');
+                document.getElementById('form-error-alert')?.classList.add('hidden');
 
                 // UI Loading Feedback
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     if (btnText) btnText.innerText = 'Sending details...';
                     if (btnIcon) btnIcon.className = 'fa-solid fa-spinner fa-spin';
+                }
+
+                const formData = {
+                    name: document.getElementById('user-name').value,
+                    phone: document.getElementById('user-phone').value,
+                    plan: document.getElementById('business-type').value,
+                    message: document.getElementById('user-message').value
+                };
+
+                try {
+                    // Send JSON payload to your own server API route
+                    const response = await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        // On success, redirect to Thank You Hash view
+                        window.location.hash = 'thank-you';
+                        leadForm.reset();
+                    } else {
+                        throw new Error(result.message || 'Failed to send message');
+                    }
+                } catch (error) {
+                    console.error('Form submission error:', error);
+                    const errorAlert = document.getElementById('form-error-alert');
+                    if (errorAlert) {
+                        errorAlert.classList.remove('hidden');
+                    }
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        if (btnText) btnText.innerText = 'Claim Free Consultation Now';
+                        if (btnIcon) btnIcon.className = 'fa-solid fa-arrow-right';
+                    }
                 }
             });
         }
